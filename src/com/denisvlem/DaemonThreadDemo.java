@@ -2,7 +2,7 @@ package com.denisvlem;
 
 import java.util.concurrent.TimeUnit;
 
-public class DaemonThreads {
+public class DaemonThreadDemo {
 
     public static volatile boolean IS_WORKING = true;
 

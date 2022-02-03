@@ -2,7 +2,7 @@ package com.denisvlem.synchronization.join;
 
 import java.util.concurrent.TimeUnit;
 
-public class JoinAndInterrupt {
+public class ThreadJoinDemo {
 
     public static void main(String[] args) throws InterruptedException {
 
