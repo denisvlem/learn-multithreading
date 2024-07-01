@@ -20,7 +20,8 @@ class FactorialTest {
         Assertions.assertEquals(BigInteger.valueOf(3628800), factorial.computeLinear(10));
         Assertions.assertEquals(BigInteger.valueOf(3628800), factorial.compute(10));
 
-        var expectedFor51 = new BigInteger("1551118753287382280224243016469303211063259720016986112000000000000");
+        var expectedFor51 = new BigInteger("15511187532873822802242430164693032110" +
+            "63259720016986112000000000000");
         Assertions.assertEquals(expectedFor51, factorial.computeLinear(51));
         Assertions.assertEquals(expectedFor51, factorial.compute(51));
     }
