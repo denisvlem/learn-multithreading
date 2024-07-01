@@ -9,10 +9,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.*;
 
 @SuppressWarnings("java:S2699")
 class CompletableFutureExampleTest {
@@ -156,10 +154,13 @@ class CompletableFutureExampleTest {
         ).join();
     }
 
+    /**
+     * Рекурсивная реализация retry с помощью CompletableFuture.
+     */
     @RepeatedTest(3)
     void testRetryWithCompletableFuture() {
-        Supplier<CompletableFuture<String>> theTask = () -> CompletableFuture.supplyAsync(() -> {
-            if (Math.random() > 0.5) {
+        CompletableFuture<String> theTask = CompletableFuture.supplyAsync(() -> {
+            if (Math.random() > 0.7) {
                 throw new IllegalArgumentException("It Failed");
             } else {
                 return "Result";
@@ -173,11 +174,10 @@ class CompletableFutureExampleTest {
                 System.out.println("Exception raised: " + ex.getMessage());
                 return null;
             });
-
     }
 
-    private CompletableFuture<String> retry(Supplier<CompletableFuture<String>> task, int retry) {
-        return task.get().handle((result, ex) -> {
+    private CompletableFuture<String> retry(CompletableFuture<String> task, int retry) {
+        return task.handle((result, ex) -> {
             if (ex != null & retry > 0) {
                 return retry(task, retry - 1);
             } else if (ex != null) {
@@ -186,5 +186,46 @@ class CompletableFutureExampleTest {
                 return CompletableFuture.completedFuture(result);
             }
         }).thenCompose(Function.identity());
+    }
+
+    /**
+     *
+     */
+    @Test
+    void testJoinAndGetDifference() {
+        var getTask = CompletableFuture.supplyAsync(() -> "Get task");
+        var joinTask = CompletableFuture.supplyAsync(() -> "Join task");
+
+        // .get() требует обработки Checked exception
+        try {
+            String getResult = getTask.get();
+            System.out.println("Get result: " + getResult);
+        } catch (ExecutionException | InterruptedException e) {
+            System.out.println("Exception raised: " + e.getMessage());
+        }
+        String joinResult = joinTask.join();
+        System.out.println("Join result: " + joinResult);
+    }
+
+    @Test
+    void testJoinAndGetDifferenceRaisingException() {
+        var throwingGet = CompletableFuture.supplyAsync(() -> {
+            throw new IllegalStateException();
+        });
+
+        var throwingJoin = CompletableFuture.supplyAsync(() -> {
+            throw new IllegalStateException();
+        });
+
+        assertThatThrownBy(throwingGet::get).isNotNull().satisfies(exception -> {
+            assertThat(exception).isInstanceOf(ExecutionException.class);
+            assertThat(exception.getCause()).isInstanceOf(IllegalStateException.class);
+        });
+
+        //здесь исключение будет unchecked
+        assertThatThrownBy(throwingJoin::join).isNotNull().satisfies(exception -> {
+            assertThat(exception).isInstanceOf(CompletionException.class);
+            assertThat(exception.getCause()).isInstanceOf(IllegalStateException.class);
+        });
     }
 }
