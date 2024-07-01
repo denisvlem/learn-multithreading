@@ -7,6 +7,9 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 
 class ThreadInterruptionTest {
 
+    /**
+     * Мы сможем зайти в synchronized даже в прерванном потоке.
+     */
     @Test
     void testInterruptedSynchronize() {
 
@@ -17,6 +20,9 @@ class ThreadInterruptionTest {
         assertThat(interruptedWorker.isInterrupted()).isTrue();
     }
 
+    /**
+     * ReentrantLock не даст захватить блокировку прерванному потоку.
+     */
     @Test
     void testInterruptedWithReentrantLock() {
 
