@@ -6,7 +6,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -45,7 +48,7 @@ class CompletableFutureExampleTest {
             System.out.printf("[%s] accepting in a separate thread%n", Thread.currentThread().getName());
             //Для теста этот assert не имеет значения, т.к. выполняется в другом потоке
             assertThat(result).as("правильный ответ").isEqualTo(response);
-        });
+        }).join();
     }
 
     /**
@@ -69,7 +72,7 @@ class CompletableFutureExampleTest {
 
         combinedTask.thenAccept((result) ->
             System.out.printf("[%s] is accepted in a separate thread%n", Thread.currentThread().getName())
-        );
+        ).join();
     }
 
     /**
@@ -93,7 +96,7 @@ class CompletableFutureExampleTest {
             return "Default value";
         }).thenAccept(result ->
             System.out.printf("[%s] value:[%s] is processed%n", Thread.currentThread().getName(), result)
-        );
+        ).join();
     }
 
     /**
@@ -132,6 +135,56 @@ class CompletableFutureExampleTest {
                 Thread.currentThread().interrupt();
                 System.out.println("Interrupted");
             }
+        }).join();
+    }
+
+    /**
+     * Выполнение задач в зависимости одна за другой.
+     */
+    @Test
+    void testComposingTasks() {
+        CompletableFuture.supplyAsync(() -> {
+            var result = "I'm gonna be first completed";
+            System.out.printf("[%s] runs for '%s'%n", Thread.currentThread().getName(), result);
+            return result;
+        }).thenCompose(result -> CompletableFuture.supplyAsync(() -> {
+            var secondResult = "I'm gonna be second completed";
+            System.out.printf("[%s] runs for '%s'%n", Thread.currentThread().getName(), secondResult);
+            return result + "\n" + secondResult;
+        })).thenAccept(result ->
+            System.out.println("The result is: \n" + result)
+        ).join();
+    }
+
+    @RepeatedTest(3)
+    void testRetryWithCompletableFuture() {
+        Supplier<CompletableFuture<String>> theTask = () -> CompletableFuture.supplyAsync(() -> {
+            if (Math.random() > 0.5) {
+                throw new IllegalArgumentException("It Failed");
+            } else {
+                return "Result";
+            }
         });
+
+        retry(theTask, 3)
+            .thenAccept(result ->
+                System.out.println("The result is:" + result)
+            ).exceptionally(ex -> {
+                System.out.println("Exception raised: " + ex.getMessage());
+                return null;
+            });
+
+    }
+
+    private CompletableFuture<String> retry(Supplier<CompletableFuture<String>> task, int retry) {
+        return task.get().handle((result, ex) -> {
+            if (ex != null & retry > 0) {
+                return retry(task, retry - 1);
+            } else if (ex != null) {
+                throw new CompletionException(ex);
+            } else {
+                return CompletableFuture.completedFuture(result);
+            }
+        }).thenCompose(Function.identity());
     }
 }
