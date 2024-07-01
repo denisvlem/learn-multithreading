@@ -1,6 +1,7 @@
 package com.denisvlem;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class ThreadInterruption {
 
@@ -32,7 +33,6 @@ public class ThreadInterruption {
         }
     }
 
-
     public static class Worker extends Thread {
 
         private final String name;
@@ -56,6 +56,34 @@ public class ThreadInterruption {
                     //Если хотите убить поток, ставьте break
                 }
             }
+        }
+    }
+
+    public static class InterruptedWorker extends Thread {
+        @Override
+        public void run() {
+            interrupt();
+            synchronized (this) {
+                System.out.println("I'm interrupted but synchronized works");
+            }
+        }
+    }
+
+    public static class InterruptedLockWorker extends Thread {
+
+        private final ReentrantLock lock = new ReentrantLock();
+
+        @Override
+        public void run() {
+            interrupt();
+            try {
+                lock.lockInterruptibly();
+                System.out.println("I'm interrupted but synchronized works");
+                lock.unlock();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                System.out.println("Worker thread is interrupted");
+            } //unlock() в finally делать бессмысленно, блокировку не удастся захватить
         }
     }
 }
