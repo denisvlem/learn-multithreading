@@ -7,7 +7,7 @@ public class ThreadJoinDemo {
     public static void main(String[] args) throws InterruptedException {
 
         final String currentThreadName = Thread.currentThread().getName();
-        System.out.printf("[%s]: started the main work...\n", currentThreadName);
+        System.out.printf("[%s]: Started the main work...\n", currentThreadName);
         var workerOne = new Worker(3);
         var workerTwo = new Worker(7);
 
@@ -45,6 +45,7 @@ public class ThreadJoinDemo {
                 TimeUnit.SECONDS.sleep(sleep);
             } catch (InterruptedException e) {
                 //it is always false in the catch
+                Thread.currentThread().interrupt();
                 System.out.println(this + ": isInterrupted() = " + isInterrupted());
                 System.out.println(this + ": has been interrupted...");
             }

@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit;
 
 public class DaemonThreadDemo {
 
-    public static volatile boolean IS_WORKING = true;
+    private static volatile boolean isWorking = true;
 
     public static void main(String[] args) throws InterruptedException {
 
@@ -18,7 +18,7 @@ public class DaemonThreadDemo {
         handyWorker.start();
 
         TimeUnit.SECONDS.sleep(1);
-        IS_WORKING = false;
+        isWorking = false;
         System.out.println("Ring the bell, work is done!!!");
     }
 
@@ -31,15 +31,17 @@ public class DaemonThreadDemo {
                 try {
                     TimeUnit.MILLISECONDS.sleep(100);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     System.out.println(this + ": I was interrupted");
-                    e.printStackTrace();
+                } finally {
+                    System.out.println("Finally");
                 }
             }
         }
 
         @Override
         public String toString() {
-            return "[Helper-" + Thread.currentThread().getId() + "]";
+            return "[Helper-" + Thread.currentThread().getName() + "]";
         }
     }
 
@@ -48,13 +50,13 @@ public class DaemonThreadDemo {
 
         @Override
         public void run() {
-            while (IS_WORKING) {
+            while (isWorking) {
                 System.out.println(this + ": I'm working on " + workTitle);
                 try {
                     TimeUnit.MILLISECONDS.sleep(300);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     System.out.println(this + ": Somebody interrupted me");
-                    e.printStackTrace();
                 }
             }
             System.out.println(this + ": I heard the bell, time to stop");
@@ -62,7 +64,7 @@ public class DaemonThreadDemo {
 
         @Override
         public String toString() {
-            return "[Worker-" + Thread.currentThread().getId() + "]";
+            return "[Worker-" + Thread.currentThread().threadId() + "]";
         }
     }
 }

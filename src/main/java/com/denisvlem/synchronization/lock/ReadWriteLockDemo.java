@@ -4,9 +4,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+@SuppressWarnings("CallToPrintStackTrace")
 public class ReadWriteLockDemo {
 
-    private static int SHARED_RESOURCE = 0;
+    private static volatile int sharedResource = 0;
     private static final int LIMIT = 50;
 
     private static final Lock READ_LOCK = new ReentrantReadWriteLock().readLock();
@@ -21,6 +22,7 @@ public class ReadWriteLockDemo {
 
     }
 
+
     public static class Reader extends Thread {
 
         public Reader(String name) {
@@ -29,12 +31,13 @@ public class ReadWriteLockDemo {
 
         @Override
         public void run() {
-            while (SHARED_RESOURCE < LIMIT) {
+            while (sharedResource < LIMIT) {
                 READ_LOCK.lock();
-                System.out.println(this.getName() + " reading: " + SHARED_RESOURCE);
+                System.out.println(this.getName() + " reading: " + sharedResource);
                 try {
                     TimeUnit.MILLISECONDS.sleep(100);
                 } catch (InterruptedException e) {
+                    this.interrupt();
                     e.printStackTrace();
                 } finally {
                     READ_LOCK.unlock();
@@ -50,12 +53,15 @@ public class ReadWriteLockDemo {
         }
 
         @Override
+        @SuppressWarnings({"java:S2696", "java:S3078"})
         public void run() {
-            while (WRITE_LOCK.tryLock() && SHARED_RESOURCE < LIMIT) {
+            while (WRITE_LOCK.tryLock() && sharedResource < LIMIT) {
                 try {
-                    System.out.println(this.getName() + " updating:" + ++SHARED_RESOURCE);
+                    ++sharedResource;
+                    System.out.println(this.getName() + " updating:" + sharedResource);
                     TimeUnit.MILLISECONDS.sleep(100);
                 } catch (InterruptedException e) {
+                    this.interrupt();
                     e.printStackTrace();
                 } finally {
                     WRITE_LOCK.unlock();

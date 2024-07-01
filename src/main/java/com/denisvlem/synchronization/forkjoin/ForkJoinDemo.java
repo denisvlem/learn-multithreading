@@ -6,15 +6,16 @@ import java.util.concurrent.RecursiveTask;
 public class ForkJoinDemo {
 
     public static void main(String[] args) {
-        ForkJoinPool pool = ForkJoinPool.commonPool();
-        Long total = pool.invoke(new RecursiveSum(0, Integer.MAX_VALUE));
-        pool.shutdown();
-        System.out.println(total);
+        try (ForkJoinPool pool = ForkJoinPool.commonPool()) {
+            Long total = pool.invoke(new RecursiveSum(0, Integer.MAX_VALUE));
+            System.out.println(total);
+        }
     }
 
     public static class RecursiveSum extends RecursiveTask<Long> {
 
-        int left, right;
+        private final int left;
+        private final int right;
 
         public RecursiveSum(int left, int right) {
             this.left = left;

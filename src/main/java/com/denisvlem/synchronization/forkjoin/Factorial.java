@@ -7,17 +7,21 @@ import java.util.concurrent.RecursiveTask;
 public class Factorial {
 
     public BigInteger compute(long n) {
-        ForkJoinPool forkJoinPool = new ForkJoinPool();
-        var result = forkJoinPool.invoke(new FactorialRecursive(n));
-        forkJoinPool.shutdown();
-        return result;
+        try (ForkJoinPool forkJoinPool = new ForkJoinPool()) {
+            return forkJoinPool.invoke(new FactorialRecursive(n));
+        }
     }
 
     public BigInteger computeLinear(long n) {
         if(0 == n || 1 == n) {
             return BigInteger.ONE;
         }
-        return BigInteger.valueOf(n).multiply(computeLinear(n - 1));
+
+        var result = BigInteger.ONE;
+        for (var i = BigInteger.valueOf(1); i.compareTo(BigInteger.valueOf(n)) <= 0; i = i.add(BigInteger.ONE)) {
+            result = result.multiply(i);
+        }
+        return result;
     }
 
     private static class FactorialRecursive extends RecursiveTask<BigInteger> {
@@ -44,7 +48,7 @@ public class Factorial {
 
     public static void main(String... args) {
         var factorial = new Factorial();
-        final long n = 1000;
+        final long n = 100;
 
         var beforeLinear = System.nanoTime();
         var linearResult = factorial.computeLinear(n);
