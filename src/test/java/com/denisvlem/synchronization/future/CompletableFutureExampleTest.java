@@ -6,6 +6,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -21,7 +22,7 @@ class CompletableFutureExampleTest {
     void testCompletableFutureAsyncRun() {
         assertThatCode(() ->
             CompletableFuture.runAsync(
-                () -> System.out.printf("[%s] is running in a separate thread",
+                () -> System.out.printf("[%s] is running in a separate thread%n",
                     Thread.currentThread().getName())
             )).doesNotThrowAnyException();
     }
@@ -87,11 +88,50 @@ class CompletableFutureExampleTest {
         });
 
         failedFuture.exceptionally((exception) -> {
-            System.out.printf("[%s] Exception is processed", Thread.currentThread().getName());
+            System.out.printf("[%s] Exception is processed%n", Thread.currentThread().getName());
             System.out.println(exception.getMessage());
             return "Default value";
         }).thenAccept(result ->
-            System.out.printf("[%s] value:[%s] is processed", Thread.currentThread().getName(), result)
+            System.out.printf("[%s] value:[%s] is processed%n", Thread.currentThread().getName(), result)
         );
+    }
+
+    /**
+     * Ожидание всех результатов.
+     */
+    @Test
+    void testWaitingForAllTasks() {
+
+        var taskOne = CompletableFuture.supplyAsync(() -> {
+            System.out.printf("[%s] is supplied%n", Thread.currentThread().getName());
+            return "Task one";
+        });
+
+        var taskTwo = CompletableFuture.supplyAsync(() -> {
+            System.out.printf("[%s] is supplied%n", Thread.currentThread().getName());
+            return "Task two";
+        });
+
+        var taskThree = CompletableFuture.supplyAsync(() -> {
+            System.out.printf("[%s] is supplied%n", Thread.currentThread().getName());
+            return "Task three";
+        });
+
+        var allOfFuture = CompletableFuture.allOf(taskOne, taskTwo, taskThree);
+
+        allOfFuture.thenRun(() -> {
+            try {
+                String one = taskOne.get();
+                String two = taskTwo.get();
+                String three = taskThree.get();
+
+                System.out.println(String.join(" ", one, two, three));
+            } catch (ExecutionException e) {
+                System.out.println("Exception raised");
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                System.out.println("Interrupted");
+            }
+        });
     }
 }
